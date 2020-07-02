@@ -84,7 +84,7 @@ func (manager *ClientManager) send(message []byte, ignore *Client) {
 func (c *Client) Read() {
 	defer func() {
 		manager.unregister <- c
-		c.socket.Close()
+		_ = c.socket.Close()
 	}()
 
 	for {
@@ -93,7 +93,7 @@ func (c *Client) Read() {
 		//如果有錯誤資訊，就登出這個連線然後關閉
 		if err != nil {
 			manager.unregister <- c
-			c.socket.Close()
+			_ = c.socket.Close()
 			break
 		}
 		//如果沒有錯誤資訊就把資訊放入broadcast
@@ -104,7 +104,7 @@ func (c *Client) Read() {
 
 func (c *Client) Write() {
 	defer func() {
-		c.socket.Close()
+		_ = c.socket.Close()
 	}()
 
 	for {
@@ -113,11 +113,11 @@ func (c *Client) Write() {
 		case message, ok := <-c.send:
 			//如果沒有訊息
 			if !ok {
-				c.socket.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 			//有訊息就寫入，傳送給web端
-			c.socket.WriteMessage(websocket.TextMessage, message)
+			_ = c.socket.WriteMessage(websocket.TextMessage, message)
 		}
 	}
 }
@@ -130,10 +130,16 @@ var manager = ClientManager{
 	clients:    make(map[*Client]bool),
 }
 
+// 取得唯一的 ClientManager
 func GetManager() *ClientManager {
 	return &manager
 }
 
+// 客戶端連接時建立一個 Client 時使用
 func CreateClient(id string, conn *websocket.Conn, send chan []byte) *Client {
-	return &Client{id: id, socket: conn, send: send}
+	client := new(Client)
+	client.id = id
+	client.socket = conn
+	client.send = send
+	return client
 }

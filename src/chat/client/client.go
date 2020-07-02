@@ -1,16 +1,18 @@
-package main
+package client
 
 import (
 	"flag"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/url"
+	"time"
 )
 
 //定義連線的服務端的網址
 var addr = flag.String("addr", "localhost:8011", "http service address")
 
-func main() {
+func Start() {
+
 	u := url.URL{Scheme: "ws", Host: *addr, Path: "/ws"}
 	var dialer *websocket.Dialer
 
@@ -21,11 +23,11 @@ func main() {
 		return
 	}
 
-	//go timeWriter(conn)
-	//列印接收到的訊息或者錯誤
+	go timeWriter(conn)
 
 	for {
 		_, message, err := conn.ReadMessage()
+
 		if err != nil {
 			fmt.Println("read:", err)
 			return
@@ -34,9 +36,9 @@ func main() {
 	}
 }
 
-//func timeWriter(conn *websocket.Conn) {
-//	for {
-//		time.Sleep(time.Second * 2)
-//		conn.WriteMessage(websocket.TextMessage, []byte(time.Now().Format("2006-01-02 15:04:05")))
-//	}
-//}
+func timeWriter(conn *websocket.Conn) {
+	for {
+		time.Sleep(1 * time.Second)
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(time.Now().Format("2006-01-02 15:04:05")))
+	}
+}
