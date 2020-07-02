@@ -19,7 +19,7 @@ func main() {
 	//註冊預設路由為 /ws ，並使用wsHandler這個方法
 	http.HandleFunc("/ws", client.WsHandler)
 
-	go client.Start()
+	//go client.Start()
 	//go client.Start() // 不能一次起兩個以上
 	// https://pkg.go.dev/github.com/gorilla/websocket?tab=doc#Concurrency
 	// Concurrency

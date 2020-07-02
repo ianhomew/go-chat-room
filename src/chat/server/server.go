@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,6 +16,8 @@ type ClientManager struct {
 	Register chan *Client
 	//新登出的長連線client
 	unregister chan *Client
+	// 當前線上人數
+	onlineCount int
 }
 
 //客戶端 Client
@@ -30,9 +33,10 @@ type Client struct {
 //會把Message格式化成json
 type Message struct {
 	//訊息struct
-	Sender    string `json:"sender,omitempty"`    //傳送者
-	Recipient string `json:"recipient,omitempty"` //接收者
-	Content   string `json:"content,omitempty"`   //內容
+	Sender      string `json:"sender,omitempty"`    //傳送者
+	Recipient   string `json:"recipient,omitempty"` //接收者
+	Content     string `json:"content,omitempty"`   //內容
+	OnlineCount int    `json:"online_count"`        //線上人數
 }
 
 func (manager *ClientManager) Start() {
@@ -42,30 +46,33 @@ func (manager *ClientManager) Start() {
 		case conn := <-manager.Register:
 			//把客戶端的連線設定為true
 			manager.clients[conn] = true
+			manager.onlineCount++
 			//把返回連線成功的訊息json格式化
-			jsonMessage, _ := json.Marshal(&Message{Content: "/A new socket has connected."})
+			jsonMessage, _ := json.Marshal(&Message{Content: "/A new socket has connected.", OnlineCount: manager.onlineCount})
 			//呼叫客戶端的send方法，傳送訊息
 			manager.send(jsonMessage, conn)
-			//如果連線斷開了
+		//如果連線斷開了
 		case conn := <-manager.unregister:
 			//判斷連線的狀態，如果是true,就關閉send，刪除連線client的值
 			if _, ok := manager.clients[conn]; ok {
 				close(conn.send)
 				delete(manager.clients, conn)
-				jsonMessage, _ := json.Marshal(&Message{Content: "/A socket has disconnected."})
+				manager.onlineCount--
+				jsonMessage, _ := json.Marshal(&Message{Content: "/A socket has disconnected.", OnlineCount: manager.onlineCount})
 				manager.send(jsonMessage, conn)
 			}
-			//廣播
+		//廣播
 		case message := <-manager.broadcast:
 			//遍歷已經連線的客戶端，把訊息傳送給他們
-			for conn := range manager.clients {
-				select {
-				case conn.send <- message:
-				default:
-					close(conn.send)
-					delete(manager.clients, conn)
-				}
-			}
+			//for conn := range manager.clients {
+			//	select {
+			//	case conn.send <- message:
+			//	default:
+			//		close(conn.send)
+			//		delete(manager.clients, conn)
+			//	}
+			//}
+			fmt.Printf("message = %s\n", message)
 		}
 	}
 }
@@ -97,7 +104,7 @@ func (c *Client) Read() {
 			break
 		}
 		//如果沒有錯誤資訊就把資訊放入broadcast
-		jsonMessage, _ := json.Marshal(&Message{Sender: c.id, Content: string(message)})
+		jsonMessage, _ := json.Marshal(&Message{Sender: c.id, Content: string(message), OnlineCount: manager.onlineCount})
 		manager.broadcast <- jsonMessage
 	}
 }
@@ -124,10 +131,11 @@ func (c *Client) Write() {
 
 //建立客戶端管理者
 var manager = ClientManager{
-	broadcast:  make(chan []byte),
-	Register:   make(chan *Client),
-	unregister: make(chan *Client),
-	clients:    make(map[*Client]bool),
+	broadcast:   make(chan []byte),
+	Register:    make(chan *Client),
+	unregister:  make(chan *Client),
+	clients:     make(map[*Client]bool),
+	onlineCount: 0,
 }
 
 // 取得唯一的 ClientManager
