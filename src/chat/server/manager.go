@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 //客戶端管理
@@ -44,15 +43,15 @@ func (manager *ClientManager) Start() {
 		//廣播
 		case message := <-manager.broadcast:
 			//遍歷已經連線的客戶端，把訊息傳送給他們
-			//for conn := range manager.clients {
-			//	select {
-			//	case conn.send <- message:
-			//	default:
-			//		close(conn.send)
-			//		delete(manager.clients, conn)
-			//	}
-			//}
-			fmt.Printf("message = %s\n", message)
+			for conn := range manager.clients {
+				select {
+				case conn.send <- message:
+				default:
+					close(conn.send)
+					delete(manager.clients, conn)
+				}
+			}
+			//fmt.Printf("%s\n", message)
 		}
 	}
 }

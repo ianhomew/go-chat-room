@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"math/rand"
 	"net/url"
 	"time"
 )
@@ -29,6 +30,7 @@ func Start() {
 		_, message, err := conn.ReadMessage()
 
 		if err != nil {
+			_ = conn.Close()
 			fmt.Println("read:", err)
 			return
 		}
@@ -38,7 +40,14 @@ func Start() {
 
 func timeWriter(conn *websocket.Conn) {
 	for {
-		time.Sleep(1 * time.Second)
+		randomTimeSleep()
 		_ = conn.WriteMessage(websocket.TextMessage, []byte(time.Now().Format("2006-01-02 15:04:05")))
 	}
+}
+
+func randomTimeSleep() {
+	min := 100   // 0.1 second
+	max := 10000 // 2 second
+	random := rand.Intn(max-min) + min
+	time.Sleep(time.Duration(random) * time.Millisecond)
 }
