@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "protoConfig;protoStruct";
+
+
+message Message {
+  string sender = 1; // 傳送者
+  string receiver = 2; // 接收者
+  string content = 3; // 內容
+  int32 online_count = 4; // 線上人數
+
+  enum ContentType {
+    TEXT = 0;
+    IMAGE = 1;
+    VIDEO = 2;
+    FILE = 3;
+  }
+  ContentType content_type = 5;
+}
