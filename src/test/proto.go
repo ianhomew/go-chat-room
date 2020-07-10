@@ -17,11 +17,11 @@ func main() {
 	}
 
 	//proto.
-	fmt.Println(message.String())
+	fmt.Println(1, message.String())
 	//fmt.Println("ContentType=", message.ContentType)
 	//fmt.Println("ContentType=", message.GetContentType())
-	fmt.Println("Enum=", message.GetContentType().Enum())
-	fmt.Println("Enum=", message.ContentType.Number())
+	fmt.Println("2 Enum=", message.GetContentType().Enum())
+	fmt.Println("3 Enum=", message.ContentType.Number())
 
 	// 序列化成二進制
 	data, err := proto.Marshal(&message)
@@ -31,7 +31,7 @@ func main() {
 		return
 	}
 
-	fmt.Println(data)
+	fmt.Println(4, data)
 
 	// 反序列化回來
 	toMessage := &protoStruct.Message{}
@@ -40,6 +40,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(toMessage)
+	fmt.Println(5, toMessage)
 
 }

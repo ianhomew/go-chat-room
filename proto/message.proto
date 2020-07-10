@@ -10,10 +10,11 @@ message Message {
   int32 online_count = 4; // 線上人數
 
   enum ContentType {
-    TEXT = 0;
-    IMAGE = 1;
-    VIDEO = 2;
-    FILE = 3;
+    ERROR = 0;
+    TEXT = 1;
+    IMAGE = 2;
+    VIDEO = 3;
+    FILE = 4;
   }
   ContentType content_type = 5;
 }

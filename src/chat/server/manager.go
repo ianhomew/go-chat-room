@@ -1,8 +1,13 @@
 package server
 
 import (
-	"encoding/json"
+	protoStruct "chat-modules/src/config/protoConfig"
+	_ "encoding/json"
+	"google.golang.org/protobuf/proto"
 )
+
+const welcomeMessage = "A new socket has connected"
+const goodbyeMessage = "A socket has disconnected"
 
 //客戶端管理
 type ClientManager struct {
@@ -15,7 +20,7 @@ type ClientManager struct {
 	//新登出的長連線client
 	unregister chan *Client
 	// 當前線上人數
-	onlineCount int
+	onlineCount int32
 }
 
 func (manager *ClientManager) Start() {
@@ -26,10 +31,10 @@ func (manager *ClientManager) Start() {
 			//把客戶端的連線設定為true
 			manager.clients[conn] = true
 			manager.onlineCount++
-			//把返回連線成功的訊息json格式化
-			jsonMessage, _ := json.Marshal(&Message{Content: "/A new socket has connected.", OnlineCount: manager.onlineCount})
+
+			binaryMessage, _ := connectedMessage()
 			//呼叫客戶端的send方法，傳送訊息
-			manager.send(jsonMessage, conn)
+			manager.send(binaryMessage, conn)
 		//如果連線斷開了
 		case conn := <-manager.unregister:
 			//判斷連線的狀態，如果是true,就關閉send，刪除連線client的值
@@ -37,8 +42,8 @@ func (manager *ClientManager) Start() {
 				close(conn.send)
 				delete(manager.clients, conn)
 				manager.onlineCount--
-				jsonMessage, _ := json.Marshal(&Message{Content: "/A socket has disconnected.", OnlineCount: manager.onlineCount})
-				manager.send(jsonMessage, conn)
+				binaryMessage, _ := disconnectedMessage()
+				manager.send(binaryMessage, conn)
 			}
 		//廣播
 		case message := <-manager.broadcast:
@@ -64,6 +69,30 @@ func (manager *ClientManager) send(message []byte, ignore *Client) {
 			conn.send <- message
 		}
 	}
+}
+
+// 有新連線時顯示的訊息
+func connectedMessage() ([]byte, error) {
+	// 序列化成二進制
+	message, err := proto.Marshal(&protoStruct.Message{
+		Content:     welcomeMessage,
+		OnlineCount: manager.onlineCount,
+		ContentType: 1,
+	})
+
+	return message, err
+}
+
+// 連線斷開時顯示的訊息
+func disconnectedMessage() ([]byte, error) {
+	// 序列化成二進制
+	message, err := proto.Marshal(&protoStruct.Message{
+		Content:     goodbyeMessage,
+		OnlineCount: manager.onlineCount,
+		ContentType: 1,
+	})
+
+	return message, err
 }
 
 //建立客戶端管理者

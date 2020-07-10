@@ -200,10 +200,11 @@ proto.Message.serializeBinaryToWriter = function(message, writer) {
  * @enum {number}
  */
 proto.Message.ContentType = {
-  TEXT: 0,
-  IMAGE: 1,
-  VIDEO: 2,
-  FILE: 3
+  ERROR: 0,
+  TEXT: 1,
+  IMAGE: 2,
+  VIDEO: 3,
+  FILE: 4
 };
 
 /**

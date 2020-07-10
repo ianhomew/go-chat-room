@@ -1,7 +1,7 @@
 package server
 
 import (
-	"encoding/json"
+	_ "encoding/json"
 	"github.com/gorilla/websocket"
 )
 
@@ -31,9 +31,7 @@ func (c *Client) Read() {
 			_ = c.socket.Close()
 			break
 		}
-		//如果沒有錯誤資訊就把資訊放入broadcast
-		jsonMessage, _ := json.Marshal(&Message{Sender: c.id, Content: string(message), OnlineCount: manager.onlineCount})
-		manager.broadcast <- jsonMessage
+		manager.broadcast <- message
 	}
 }
 
@@ -52,7 +50,8 @@ func (c *Client) Write() {
 				return
 			}
 			//有訊息就寫入，傳送給web端
-			_ = c.socket.WriteMessage(websocket.TextMessage, message)
+			// 用 protobuf 傳輸是二進制的 必須選擇用 BinaryMessage
+			_ = c.socket.WriteMessage(websocket.BinaryMessage, message)
 		}
 	}
 }
